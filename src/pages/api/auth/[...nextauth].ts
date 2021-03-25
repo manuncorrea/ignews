@@ -15,10 +15,6 @@ export default NextAuth({
     }),
   ],
 
-  jwt: {
-    signingKey: process.env.SIGNING_KEY
-  },
-
   callbacks: {
     async signIn(user, account, profile) {
       // inserção no faunadb
@@ -26,9 +22,28 @@ export default NextAuth({
 
       try{
         await fauna.query(
-          q.Create(
-            q.Collection('users'),
-            { data: { email }}
+          // SE NÃO EXISTE UM USUARIO QUE TENHA ESTE EMAIL...
+          q.If(
+            q.Not(
+              q.Exists(
+                q.Match(
+                  q.Index('user_by_email'),
+                  q.Casefold(user.email)
+                )
+              )
+            ),
+            //... CRIE UM NOVO USUARIO COM EMAIL DIGITADO...
+            q.Create(
+              q.Collection('users'),
+              { data: { email }}
+            ),
+            // ...SE NÃO BUSCA O USUARIO
+            q.Get(
+              q.Match(
+                q.Index('user_by_email'),
+                q.Casefold(user.email)
+              )
+            )
           )
         )
         return true
