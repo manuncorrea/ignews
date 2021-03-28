@@ -5,3 +5,5 @@ export async function getStripeJs() {
 
   return stripeJs
 }
+
+//stripe listen --forward-to localhost:3000/api/webhooks
